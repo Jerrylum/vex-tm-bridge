@@ -187,34 +187,29 @@ def impl_queue_skills(skills_button: ButtonWrapper, skills: FieldsetQueueSkills)
 
 
 def impl_set_audience_display(
-    display_button: Dict[FieldsetAudienceDisplay, ButtonWrapper],
+    display_buttons: Dict[FieldsetAudienceDisplay, ButtonWrapper],
     display: FieldsetAudienceDisplay,
-    competition: Competition,
 ) -> None:
     """Set the audience display mode.
 
     Args:
-        display_button: Dictionary mapping display modes to their button controls
+        display_buttons: Dictionary mapping display modes to their button controls
         display: The display mode to switch to
-        competition: The current competition type
 
     Raises:
         ValueError: If the display mode is not available for this competition
     """
-    if not display.available_for(competition):
-        raise ValueError(f"Display {display} is not available for {competition}")
-    display_button[display].click()
+    if display not in display_buttons:
+        raise ValueError(f"Display {display} is not available")
+
+    display_buttons[display].click()
 
 
-def impl_get_audience_display(
-    display_buttons: Dict[FieldsetAudienceDisplay, ButtonWrapper],
-    competition: Competition,
-) -> FieldsetAudienceDisplay:
+def impl_get_audience_display(display_buttons: Dict[FieldsetAudienceDisplay, ButtonWrapper]) -> FieldsetAudienceDisplay:
     """Get the current audience display mode.
 
     Args:
         display_buttons: Dictionary mapping display modes to their button controls
-        competition: The current competition type
 
     Returns:
         The current display mode
@@ -223,14 +218,13 @@ def impl_get_audience_display(
         ValueError: If no display mode is currently selected
     """
     for display, button in display_buttons.items():
-        if display.available_for(competition) and button.get_check_state():
+        if button.get_check_state():
             return display
     raise ValueError("No display found")
 
 
 def impl_get_audience_display_lazy(
     display_buttons: Dict[FieldsetAudienceDisplay, ButtonWrapper],
-    competition: Competition,
     last_display: FieldsetAudienceDisplay,
 ) -> FieldsetAudienceDisplay:
     """Get the current audience display mode, using a cached value if possible.
@@ -240,7 +234,6 @@ def impl_get_audience_display_lazy(
 
     Args:
         display_buttons: Dictionary mapping display modes to their button controls
-        competition: The current competition type
         last_display: The last known display mode
 
     Returns:
@@ -249,7 +242,7 @@ def impl_get_audience_display_lazy(
     if display_buttons[last_display].get_check_state():
         return last_display
     else:
-        return impl_get_audience_display(display_buttons, competition)
+        return impl_get_audience_display(display_buttons)
 
 
 def impl_get_match_time_by_string(raw: Optional[str]) -> int:
@@ -608,7 +601,7 @@ def impl_get_fieldset_overview(
     last_overview: FieldsetOverview | None,
 ) -> FieldsetOverview:
     if last_overview is None:
-        audience_display = impl_get_audience_display(audience_display_buttons, competition)
+        audience_display = impl_get_audience_display(audience_display_buttons)
         match_timer_content = impl_get_match_timer_content(match_timer_control)
         match_time = impl_get_match_time_by_string(match_timer_content)
         prestart_time = impl_get_prestart_time_by_string(match_timer_content)
@@ -636,9 +629,7 @@ def impl_get_fieldset_overview(
             active_match,
         )
     else:
-        audience_display = impl_get_audience_display_lazy(
-            audience_display_buttons, competition, last_overview.audience_display
-        )
+        audience_display = impl_get_audience_display_lazy(audience_display_buttons, last_overview.audience_display)
         match_timer_content = impl_get_match_timer_content(match_timer_control)
         match_time = impl_get_match_time_by_string(match_timer_content)
         prestart_time = impl_get_prestart_time_by_string(match_timer_content)
@@ -1148,11 +1139,11 @@ class ImplFieldset(Fieldset):
 
     @require_window
     def set_audience_display(self, display: FieldsetAudienceDisplay) -> None:
-        impl_set_audience_display(self._audience_display_buttons, display, self.competition)
+        impl_set_audience_display(self._audience_display_buttons, display)
 
     @require_window
     def get_audience_display(self) -> FieldsetAudienceDisplay:
-        return impl_get_audience_display(self._audience_display_buttons, self.competition)
+        return impl_get_audience_display(self._audience_display_buttons)
 
     @require_window
     def get_match_time(self) -> int:
