@@ -1,6 +1,66 @@
 # VEX Tournament Manager Bridge
 
-An unofficial Python bridge for interacting with VEX Tournament Manager software. This package provides a high-level API to control and monitor VEX Tournament Manager through its UI using pywinauto.
+An unofficial Python bridge for interacting with VEX Tournament Manager software. This package provides a high-level API to control and monitor VEX Tournament Manager through its UI using pywinauto and web scraping.
+
+> [!CAUTION] > **This package is very likely to be considered as unauthorized software.** As an Event Partner, using this package might be treated as a violation of the Commitment to Event Excellence. This package accesses Tournament Manager through UI automation (pywinauto) and web scraping, which might be considered as accessing internal components of Tournament Manager outside of the official open API protocols.
+>
+> **Read the official [TM Public API guidelines](https://kb.roboticseducation.org/hc/en-us/articles/19238156122135) and [Commitment to Event Excellence](https://kb.roboticseducation.org/hc/en-us/articles/12094736701975-Commitment-to-Event-Excellence) before using this package in any official event.**
+
+## Why Use This Package?
+
+This package doesn't "go beyond" what the TM Public API can do in terms of functionality. The key benefit of using this package is that it does not require an API key, which expires every year and needs to be re-obtained from the official source.
+
+## Functionality Available
+
+By using this package, the following functionality is available:
+
+- **Match Control**: Start/resume matches, end matches early, abort matches, reset timers
+- **Field Monitoring**: Real-time monitoring of match states, timers, and field conditions
+- **Display Control**: Change audience display modes
+- **Field Configuration**: Set field IDs, autonomous bonus settings, sound settings
+- **Tournament Data**: Access teams, matches, rankings, and skills data through web scraping
+- **Event Streaming**: Real-time updates of field state changes
+
+## Functionality NOT Available
+
+This package intentionally does NOT provide:
+
+- **Score Modification**: Cannot edit or submit match scores
+- **Team Data Editing**: Cannot modify team information or registration
+- **Event Configuration**: Cannot generate match schedules or modify tournament settings
+- **Direct Database Access**: Does not bypass Tournament Manager's data validation
+- **Real-time Scoring**: Cannot access live scoring data during matches
+
+## Developer Guidelines - Understanding the TM Public API Spirit
+
+As a developer using this package, you should understand and respect the spirit of the TM Public API guidelines:
+
+### 1. Do Not Make Third-Party Modifications That Risk Event Integrity
+
+This package **cannot** modify tournament data, scores, or core functionality. This design choice protects event integrity by ensuring that all data modifications must go through Tournament Manager's official interfaces
+
+**The reasoning**: Tournament Manager has built-in validation and safety checks. Bypassing these systems could compromise the integrity of official competitions.
+
+### 2. Do Not Display Match Time for Live Applications
+
+**NEVER display the match time you obtain from VEX Tournament Manager Bridge in live applications.** Do not use it to create audience displays or real-time match timers.
+
+Even though this package attempts to obtain the most accurate match time possible, it should **never** be considered as the authoritative source of time. You might use it for non-critical applications like timestamping video replays, but **please don't use it for live match displays.**
+
+**The reasoning**: Keeping accurate time and synchronizing it across all devices is a complex challenge intertwined throughout Tournament Manager's codebase. Displaying unofficial match times could confuse teams, volunteers, and spectators about the official match status.
+
+### 3. Do Not Recreate Existing Tournament Manager Functionality
+
+Do not use this package to recreate TM Mobile or create alternative scoring applications.
+
+**However**, you **can** create applications for specific, approved use cases such as:
+
+- A large "start match" button for guest ceremonies (e.g., letting VIPs start the final match)
+- Camera control systems that switch views based on active fields
+- Video recording systems that automatically start/stop with matches
+- Custom displays that enhance (but don't replace) the official audience display
+
+**The reasoning**: Maintaining consistency across events ensures that volunteers can move between events with minimal retraining, and teams have a predictable experience regardless of the event they attend.
 
 ## Requirements
 
