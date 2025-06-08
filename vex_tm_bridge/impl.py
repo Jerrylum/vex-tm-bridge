@@ -789,7 +789,7 @@ def impl_get_match_list_VIQRC(tm_host_ip: str, division_no: int) -> List[MatchVI
                     score_text = cols[-1].text.strip()
                     score = float(score_text) if score_text else None
                     match = MatchVIQRC(match_id, team_1, team_2, score)
-                    matches.append(match)  # type: ignore
+                    matches.append(match)
         return matches
     except Exception as e:
         raise Exception(f"Error fetching matches: {e}")
@@ -875,7 +875,7 @@ def impl_get_ranking_list_VIQRC(tm_host_ip: str, division_no: int) -> List[Ranki
                     matches_played = int(cols[3].text.strip())
                     avg_score = float(cols[4].text.strip())
                     ranking = RankingVIQRC(rank, team_no, matches_played, avg_score)
-                    rankings.append(ranking)  # type: ignore
+                    rankings.append(ranking)
         return rankings
     except Exception as e:
         raise Exception(f"Error fetching rankings: {e}")
@@ -1379,6 +1379,10 @@ def get_bridge_engine(competition: Literal[Competition.V5RC], low_cpu_usage: boo
 
 @overload
 def get_bridge_engine(competition: Literal[Competition.VIQRC], low_cpu_usage: bool = True) -> BridgeEngineVIQRC: ...
+
+
+@overload
+def get_bridge_engine(competition: Competition, low_cpu_usage: bool = True) -> BridgeEngine: ...
 
 
 def get_bridge_engine(competition: Competition, low_cpu_usage: bool = True) -> BridgeEngine:

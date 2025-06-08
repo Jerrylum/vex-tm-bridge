@@ -37,6 +37,7 @@ ENV/
 .coverage
 .pytest_cache/
 htmlcov/
+html_examples
 
 # Distribution
 dist/

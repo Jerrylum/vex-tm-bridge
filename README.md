@@ -62,18 +62,94 @@ while True:
     time.sleep(1) # Keep the program running
 ```
 
+## API Server
+
+The package includes a FastAPI-based web server that provides a RESTful API and real-time updates.
+
+### Running the API Server
+
+#### Using the CLI command (after installation):
+
+```bash
+vex-tm-bridge --tm-host-ip localhost --competition V5RC --port 8000
+```
+
+#### Using Python module:
+
+```bash
+python -m vex_tm_bridge --tm-host-ip localhost --competition V5RC --port 8000
+```
+
+#### Programmatically:
+
+```python
+from vex_tm_bridge import get_bridge_engine
+from vex_tm_bridge.base import Competition
+from vex_tm_bridge.web import create_app
+
+# Create a bridge engine instance
+engine = get_bridge_engine(Competition.V5RC, low_cpu_usage=True)
+
+# Create an API application instance
+# tm_host_ip is the IP address of the Tournament Manager host machine
+# It is not required to enable Local TM API setting in Tournament Manager.
+api_server = create_app(tm_host_ip="localhost", bridge_engine=engine)
+
+# Start the application
+api_server.start()
+
+# Use uvicorn to serve (api_server.app is the FastAPI instance)
+import uvicorn
+uvicorn.run(api_server.app, host="0.0.0.0", port=8000)
+```
+
+### API Endpoints
+
+#### Tournament Data
+
+- `GET /api/teams/{division_id}` - Get teams for a division
+- `GET /api/matches/{division_id}` - Get matches for a division
+- `GET /api/rankings/{division_id}` - Get rankings for a division
+- `GET /api/skills` - Get skills rankings
+
+#### Fieldset Control
+
+- `GET /api/fieldset/{fieldset_title}` - Get fieldset overview
+- `POST /api/fieldset/{fieldset_title}/start` - Start/resume match
+- `POST /api/fieldset/{fieldset_title}/end-early` - End match early
+- `POST /api/fieldset/{fieldset_title}/abort` - Abort match
+- `POST /api/fieldset/{fieldset_title}/reset` - Reset timer
+
+#### Fieldset Settings
+
+- `GET/POST /api/fieldset/{fieldset_title}/display` - Audience display mode
+- `GET/POST /api/fieldset/{fieldset_title}/field-id` - Current field ID
+- `GET/POST /api/fieldset/{fieldset_title}/autonomous-bonus` - Autonomous bonus (V5RC only)
+- `GET/POST /api/fieldset/{fieldset_title}/play-sounds` - Sound settings
+- `GET/POST /api/fieldset/{fieldset_title}/auto-results` - Auto results settings
+
+#### Real-time Updates
+
+- `GET /api/fieldset/{fieldset_title}/events` - Server-Sent Events stream for fieldset updates
+
+### API Documentation
+
+Once the server is running, visit `http://localhost:8000/docs` for interactive API documentation.
+
 ## Features
 
 - Monitor and control VEX Tournament Manager Match Field Sets
 - Event-based updates for field state changes
 - Support for both VRC and VIQRC competitions
 - Low CPU usage mode for better performance
+- RESTful API server with real-time updates via Server-Sent Events
+- Command-line interface for running the API server
 
 ## Development
 
 ### Setting Up Development Environment
 
-1. Install uv (package manager):
+1. **Install uv (package manager):**
 
    ```bash
    curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -85,79 +161,94 @@ while True:
    powershell -c "(irm https://astral.sh/uv/install.ps1) | iex"
    ```
 
-2. Clone the repository:
+2. **Clone the repository:**
 
    ```bash
    git clone https://github.com/jerrylum/vex-tm-bridge.git
    cd vex-tm-bridge
    ```
 
-3. Install venv:
+3. **Create and activate a Python 3.11 virtual environment:**
 
    ```bash
-   uv venv
+   uv venv --python 3.11
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
    ```
 
-4. Install dependencies:
+4. **Install the package in editable mode with all dependencies:**
 
    ```bash
-   # Install from uv.lock for reproducible environment
-   uv pip sync requirements.txt
+   uv pip install -e .
+   ```
 
-   # Install in editable mode with dev dependencies
+5. **Install development dependencies (optional):**
+
+   ```bash
    uv pip install -e ".[dev]"
    ```
 
-### Development Dependencies
+### Dependencies
 
-The project uses uv for dependency management with the following key files:
+The project uses the following main dependencies:
 
-- `pyproject.toml`: Defines project metadata and dependencies
-- `uv.lock`: Ensures reproducible builds by locking all dependency versions
+- **FastAPI** - Web framework for the API server
+- **uvicorn** - ASGI server for FastAPI
+- **pywinauto** - Windows UI automation for Tournament Manager integration
+- **requests** - HTTP library for Tournament Manager web interface
+- **beautifulsoup4** - HTML parsing for web scraping
+- **click** - Command-line interface framework
+- **sse-starlette** - Server-Sent Events support
 
 Development tools:
 
-- `black`: Code formatting (version 25.1.0 or higher)
-- `pytest`: Testing (version 8.4.0 or higher)
-- `build`: Package building (version 1.0.3 or higher)
+- **black** - Code formatting (version 25.1.0 or higher)
+- **pytest** - Testing (version 8.4.0 or higher)
+- **build** - Package building (version 1.2.2 or higher)
 
-### Building and Testing
+### Development Workflow
 
-To run the project in development mode:
+1. **Update dependencies:**
 
-```bash
-uv run dev/playground.py
-```
+   ```bash
+   uv pip compile pyproject.toml -o requirements.txt
+   ```
 
-To build the package:
+2. **Code formatting:**
 
-```bash
-uv build
-```
+   ```bash
+   black vex_tm_bridge/ --line-length 120
+   ```
 
-This will create distribution files in the `dist/` directory.
+3. **Testing the basic functionality:**
 
-To run tests:
+   ```bash
+   python dev/playground.py
+   ```
 
-```bash
-uv run pytest
-```
+4. **Building the package:**
 
-### Code Formatting
+   ```bash
+   uv build
+   ```
 
-Format code using black:
+5. **Running the API server in development:**
+   ```bash
+   python -m vex_tm_bridge --tm-host-ip localhost --port 8000
+   ```
 
-```bash
-uv run black .
-```
+### CLI Options
 
-### Development Tips
+The API server accepts the following command-line options:
 
-- The virtual environment is created in `.venv/` directory
-- `uv` advantages:
-- Managing dependencies:
-  - Use `uv add PACKAGE` to add new runtime dependencies
-  - Use `uv add --dev PACKAGE` to add new development dependencies
-  - Use `uv pip sync requirements.txt` for initial setup or after pulling changes (uses uv.lock)
-  - Use `uv pip install -e ".[dev]"` when working on the package locally
-  - Use `uv pip compile pyproject.toml` to update `uv.lock` when dependencies change
+- `--tm-host-ip` (default: localhost) - Tournament Manager host IP address
+- `--port` (default: 8000) - Port to run the API server on
+- `--competition` (default: V5RC) - Competition type (V5RC or VIQRC)
+- `--host` (default: 0.0.0.0) - Host to bind the server to
+
+### Notes
+
+- The bridge requires VEX Tournament Manager to be running and accessible
+- Fieldset windows must be opened at least once for pywinauto to find them
+- The API server uses low CPU mode by default for efficient monitoring
+- Server-Sent Events provide real-time updates for fieldset state changes
+- All endpoints include proper error handling and return JSON responses
