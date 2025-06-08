@@ -23,7 +23,7 @@ def main():
             print("\nOverview updated:")
             print(overview)
 
-        fieldset.overview_event.on(on_overview_updated)
+        fieldset.overview_updated_event.on(on_overview_updated)
 
         # Keep the script running
         print("\nMonitoring for updates (Ctrl+C to stop)...")

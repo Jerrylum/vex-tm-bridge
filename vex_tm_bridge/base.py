@@ -504,7 +504,7 @@ class Fieldset(ABC):
         Args:
             competition: The type of competition this field is being used for.
         """
-        self.overview_event = FieldsetOverviewUpdatedEvent(self)
+        self.overview_updated_event = FieldsetOverviewUpdatedEvent(self)
         self.competition = competition
 
     @abstractmethod

@@ -19,7 +19,7 @@ def test_basic_monitoring():
     def on_overview_updated(self: Fieldset, overview: FieldsetOverview):
         print(f"Overview updated: {overview}\n")
 
-    fieldset.overview_event.on(on_overview_updated)
+    fieldset.overview_updated_event.on(on_overview_updated)
     return engine, fieldset
 
 

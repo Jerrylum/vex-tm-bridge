@@ -1068,7 +1068,7 @@ class ImplFieldset(Fieldset):
             self._last_overview if cache else None,
         )
         if self._last_overview != overview:  # Only trigger if overview changed
-            self.overview_event.trigger(overview)  # Pass overview as argument
+            self.overview_updated_event.trigger(overview)  # Pass overview as argument
         self._last_overview = overview
         return overview
 
