@@ -37,6 +37,29 @@ def test_match_control(fieldset: Fieldset):
     # print("Ending match early...")
     # fieldset.end_early()
 
+
+def test_v5rc_web_server():
+    """Test web server functions."""
+    engine = get_bridge_engine(Competition.V5RC, low_cpu_usage=True)
+
+    web_server = engine.get_web_server("localhost")
+    teams = web_server.get_teams(1)
+    for team in teams:
+        print(team)
+
+    matches = web_server.get_matches(1)
+    for match in matches:
+        print(match)
+
+    rankings = web_server.get_rankings(1)
+    for ranking in rankings:
+        print(ranking)
+
+    skills_rankings = web_server.get_skills_rankings()
+    for ranking in skills_rankings:
+        print(ranking)
+
+
 def test_viqrc_web_server():
     """Test web server functions."""
     engine = get_bridge_engine(Competition.VIQRC, low_cpu_usage=True)
@@ -58,8 +81,10 @@ def test_viqrc_web_server():
     for ranking in skills_rankings:
         print(ranking)
 
+
 def main():
-    test_viqrc_web_server()
+    test_v5rc_web_server()
+    # test_viqrc_web_server()
     # try:
     #     engine, fieldset = test_basic_monitoring()
 

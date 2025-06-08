@@ -31,9 +31,6 @@ from .base import (
     SkillsRanking,
     Team,
     TournamentManagerWebServer,
-    M,
-    R,
-    C,
 )
 from pywinauto.application import WindowSpecification
 from pywinauto import Application, findwindows
@@ -702,11 +699,63 @@ def impl_get_match_list_V5RC(tm_host_ip: str, division_no: int) -> List[MatchV5R
     Args:
         tm_host_ip: The IP address of the Tournament Manager web server
         division_no: The division number
+
+    Returns:
+        A list of matches
+
+    Raises:
+        Exception: If the matches cannot be fetched
     """
+    url = f"http://{tm_host_ip}/division{division_no}/matches"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    # TODO
+        matches: List[MatchV5RC] = []
+        table = soup.find("table", {"class": "table-centered"})
+        if table and isinstance(table, Tag):
+            for row in table.find_all("tr")[1:]:  # Skip header row
+                cols = row.find_all("td")
+                if len(cols) >= 3:  # Ensure we have minimum required columns
+                    match_id = cols[0].text.strip()
 
-    return []
+                    # Extract teams by CSS class - more reliable than column positions
+                    red_team = []
+                    blue_team = []
+
+                    # Find all red team cells and blue team cells
+                    red_team_cells = row.find_all("td", class_="redteam")[:-1]
+                    blue_team_cells = row.find_all("td", class_="blueteam")[:-1]
+
+                    # Extract team numbers from red team cells
+                    for cell in red_team_cells:
+                        team_text = cell.text.strip()
+                        if team_text:  # Only add non-empty team numbers
+                            red_team.append(team_text)
+
+                    # Extract team numbers from blue team cells
+                    for cell in blue_team_cells:
+                        team_text = cell.text.strip()
+                        if team_text:  # Only add non-empty team numbers
+                            blue_team.append(team_text)
+
+                    # Find score columns (should be the last two columns)
+                    if len(cols) >= 2:
+                        red_score_text = cols[-2].text.strip()
+                        blue_score_text = cols[-1].text.strip()
+
+                        # Parse scores, handling potential HTML tags like <strong>
+                        red_score = int(red_score_text) if red_score_text.isdigit() else 0
+                        blue_score = int(blue_score_text) if blue_score_text.isdigit() else 0
+                    else:
+                        red_score = blue_score = 0
+
+                    match = MatchV5RC(match_id, red_team, blue_team, red_score, blue_score)
+                    matches.append(match)
+        return matches
+    except Exception as e:
+        raise Exception(f"Error fetching matches: {e}")
 
 
 def impl_get_match_list_VIQRC(tm_host_ip: str, division_no: int) -> List[MatchVIQRC]:
@@ -752,11 +801,47 @@ def impl_get_ranking_list_V5RC(tm_host_ip: str, division_no: int) -> List[Rankin
     Args:
         tm_host_ip: The IP address of the Tournament Manager web server
         division_no: The division number
+
+    Returns:
+        A list of rankings
+
+    Raises:
+        Exception: If the rankings cannot be fetched
     """
+    url = f"http://{tm_host_ip}/division{division_no}/rankings"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.text, "html.parser")
 
-    # TODO
+        rankings: List[RankingV5RC] = []
+        table = soup.find("table", {"class": "table"})
+        if table and isinstance(table, Tag):
+            for row in table.find_all("tr")[1:]:  # Skip header row
+                cols = row.find_all("td")
+                if len(cols) >= 7:  # Ensure we have all required columns
+                    rank = int(cols[0].text.strip())
+                    team_no = cols[1].text.strip()
+                    # Column 2 is team name, which we skip for RankingV5RC
+                    average_wps = float(cols[3].text.strip())
+                    average_aps = float(cols[4].text.strip())
+                    average_sps = float(cols[5].text.strip())
 
-    return []
+                    # Parse W-L-T format (e.g., "1-0-0")
+                    wlt_text = cols[6].text.strip()
+                    wlt_parts = wlt_text.split("-")
+                    if len(wlt_parts) == 3:
+                        wins = int(wlt_parts[0])
+                        losses = int(wlt_parts[1])
+                        ties = int(wlt_parts[2])
+                    else:
+                        wins = losses = ties = 0
+
+                    ranking = RankingV5RC(rank, team_no, average_wps, average_aps, average_sps, wins, losses, ties)
+                    rankings.append(ranking)
+        return rankings
+    except Exception as e:
+        raise Exception(f"Error fetching rankings: {e}")
 
 
 def impl_get_ranking_list_VIQRC(tm_host_ip: str, division_no: int) -> List[RankingVIQRC]:
