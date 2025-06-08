@@ -6,7 +6,6 @@ This file is for development purposes only and won't be included in the package.
 import time
 from vex_tm_bridge import get_bridge_engine
 from vex_tm_bridge.base import Competition, Fieldset, FieldsetOverview
-from vex_tm_bridge.web import create_v5rc_web_server, create_viqrc_web_server
 
 
 def test_basic_monitoring():
@@ -40,7 +39,9 @@ def test_match_control(fieldset: Fieldset):
 
 def test_viqrc_web_server():
     """Test web server functions."""
-    web_server = create_viqrc_web_server("localhost")
+    engine = get_bridge_engine(Competition.VIQRC, low_cpu_usage=True)
+
+    web_server = engine.get_web_server("localhost")
     teams = web_server.get_teams(1)
     for team in teams:
         print(team)

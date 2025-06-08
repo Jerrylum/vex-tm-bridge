@@ -7,7 +7,7 @@ for representing the state of match fields.
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, List, TypeVar, Callable, Tuple, Sequence
+from typing import Generic, List, TypeVar, Callable
 
 Self = TypeVar("Self")
 EventArg = TypeVar("EventArg")
@@ -402,6 +402,7 @@ class MatchVIQRC(Match):
 
 class Ranking(ABC):
     """A ranking in the tournament."""
+
     def __init__(self, rank: int, team_no: str) -> None:
         self.rank = rank
         self.team_no = team_no
@@ -823,11 +824,14 @@ class FieldsetOverviewUpdatedEvent(Event[Fieldset, FieldsetOverview]):
         super().__init__(caller_self)
 
 
-M = TypeVar('M', bound=Match)
-R = TypeVar('R', bound=Ranking)
+M = TypeVar("M", bound=Match)
+R = TypeVar("R", bound=Ranking)
+C = TypeVar("C", bound=Competition)
+
+
 class TournamentManagerWebServer(ABC, Generic[M, R]):
     """Interface for interacting with the Tournament Manager web server.
-    
+
     Type Parameters:
         Match: The type of match (MatchV5RC or MatchVIQRC)
         Ranking: The type of ranking (RankingV5RC or RankingVIQRC)
@@ -941,5 +945,55 @@ class BridgeEngine(ABC):
         Raises:
             WindowNotFoundError: If the window cannot be found
             Exception: If the bridge engine is not running
+        """
+        pass
+
+    @abstractmethod
+    def get_web_server(self, tm_host_ip: str) -> "TournamentManagerWebServer":
+        """Get a web server instance for interacting with Tournament Manager web interface.
+
+        Args:
+            tm_host_ip: The IP address of the Tournament Manager web server
+
+        Returns:
+            A web server instance typed based on the competition type.
+            For V5RC: TournamentManagerWebServer[MatchV5RC, RankingV5RC]
+            For VIQRC: TournamentManagerWebServer[MatchVIQRC, RankingVIQRC]
+        """
+        pass
+
+
+class BridgeEngineV5RC(BridgeEngine, ABC):
+    """V5RC-specific bridge engine implementation."""
+
+    def __init__(self, low_cpu_usage: bool) -> None:
+        super().__init__(Competition.V5RC, low_cpu_usage)
+
+    @abstractmethod
+    def get_web_server(self, tm_host_ip: str) -> TournamentManagerWebServer[MatchV5RC, RankingV5RC]:
+        """Get a web server instance for interacting with Tournament Manager web interface.
+
+        Args:
+            tm_host_ip: The IP address of the Tournament Manager web server
+
+        Returns:
+            A web server instance typed based on the competition type.
+            TournamentManagerWebServer[MatchV5RC, RankingV5RC]
+        """
+        pass
+
+
+class BridgeEngineVIQRC(BridgeEngine, ABC):
+    """VIQRC-specific bridge engine implementation."""
+
+    def __init__(self, low_cpu_usage: bool) -> None:
+        super().__init__(Competition.VIQRC, low_cpu_usage)
+
+    @abstractmethod
+    def get_web_server(self, tm_host_ip: str) -> TournamentManagerWebServer[MatchVIQRC, RankingVIQRC]:
+        """Get a web server instance for interacting with Tournament Manager web interface.
+
+        Args:
+            tm_host_ip: The IP address of the Tournament Manager web server
         """
         pass
