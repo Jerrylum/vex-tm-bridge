@@ -2,13 +2,16 @@
 
 An unofficial Python bridge for interacting with VEX Tournament Manager software. This package provides a high-level API to control and monitor VEX Tournament Manager through its UI using pywinauto and web scraping.
 
-> [!CAUTION] > **This package is very likely to be considered as unauthorized software.** As an Event Partner, using this package might be treated as a violation of the Commitment to Event Excellence. This package accesses Tournament Manager through UI automation (pywinauto) and web scraping, which might be considered as accessing internal components of Tournament Manager outside of the official open API protocols.
+> [!CAUTION]
+> **This package is very likely to be considered as unauthorized software.** As an Event Partner, using this package might be treated as a violation of the Commitment to Event Excellence. This package accesses Tournament Manager through UI automation (pywinauto) and web scraping, which might be considered as accessing internal components of Tournament Manager outside of the official open API protocols.
 >
 > **Read the official [TM Public API guidelines](https://kb.roboticseducation.org/hc/en-us/articles/19238156122135) and [Commitment to Event Excellence](https://kb.roboticseducation.org/hc/en-us/articles/12094736701975-Commitment-to-Event-Excellence) before using this package in any official event.**
 
 ## Why Use This Package?
 
-This package doesn't "go beyond" what the TM Public API can do in terms of functionality. The key benefit of using this package is that it does not require an API key, which expires every year and needs to be re-obtained from the official source.
+This package provides similar functionality to the TM Public API. One benefit of using this package is that developers do not need to obtain an API key, which expires every year and needs to be re-obtained from the official source.
+
+You might be fine using this package while respecting the spirit of the TM Public API guidelines, which is why this package intentionally does NOT provide some functionality that could compromise event integrity.
 
 ## Functionality Available
 
@@ -35,13 +38,7 @@ This package intentionally does NOT provide:
 
 As a developer using this package, you should understand and respect the spirit of the TM Public API guidelines:
 
-### 1. Do Not Make Third-Party Modifications That Risk Event Integrity
-
-This package **cannot** modify tournament data, scores, or core functionality. This design choice protects event integrity by ensuring that all data modifications must go through Tournament Manager's official interfaces
-
-**The reasoning**: Tournament Manager has built-in validation and safety checks. Bypassing these systems could compromise the integrity of official competitions.
-
-### 2. Do Not Display Match Time for Live Applications
+### 1. Do Not Display Match Time for Live Applications
 
 **NEVER display the match time you obtain from VEX Tournament Manager Bridge in live applications.** Do not use it to create audience displays or real-time match timers.
 
@@ -49,7 +46,7 @@ Even though this package attempts to obtain the most accurate match time possibl
 
 **The reasoning**: Keeping accurate time and synchronizing it across all devices is a complex challenge intertwined throughout Tournament Manager's codebase. Displaying unofficial match times could confuse teams, volunteers, and spectators about the official match status.
 
-### 3. Do Not Recreate Existing Tournament Manager Functionality
+### 2. Do Not Recreate Existing Tournament Manager Functionality
 
 Do not use this package to recreate TM Mobile or create alternative scoring applications.
 
