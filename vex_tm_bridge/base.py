@@ -391,7 +391,7 @@ class Fieldset(ABC):
         Args:
             competition: The type of competition this field is being used for.
         """
-        self.overview_event = OverviewEvent(self)
+        self.overview_event = FieldsetOverviewUpdatedEvent(self)
         self.competition = competition
 
     @abstractmethod
@@ -699,7 +699,7 @@ class Fieldset(ABC):
         ...
 
 
-class OverviewEvent(Event[Fieldset, FieldsetOverview]):
+class FieldsetOverviewUpdatedEvent(Event[Fieldset, FieldsetOverview]):
     """Event that is triggered when the fieldset overview is updated."""
 
     def __init__(self, caller_self: Fieldset) -> None:
