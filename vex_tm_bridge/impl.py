@@ -1010,21 +1010,17 @@ class ImplBridgeEngine(BridgeEngine):
                 # Determine if we should use cache based on CPU mode and iteration
                 should_use_cache = self.low_cpu_usage and iteration % CACHE_CYCLE != 0
                 fieldset.get_overview(cache=should_use_cache)
-            except WindowNotFoundError:
+            except Exception:
                 # Window was closed or lost
                 fieldset.set_window(None)
+                print(f"Fieldset {title} lost connection")
                 # Try to recover by reconnecting
                 try:
                     fieldset.reobtain_window()
-                except WindowNotFoundError:
+                except Exception:
                     # Still can't find window, wait before retry
                     time.sleep(1.0)
                     continue
-            except Exception as e:
-                # Unexpected error, log it and continue
-                print(f"Error monitoring fieldset {title}: {e}")
-                time.sleep(0.1)
-                continue
 
             iteration = (iteration + 1) % CACHE_CYCLE
 
