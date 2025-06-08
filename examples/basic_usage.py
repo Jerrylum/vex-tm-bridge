@@ -7,12 +7,12 @@ from vex_tm_bridge.base import Competition
 
 def main():
     # Create and start the bridge engine
-    engine = get_bridge_engine(low_cpu_usage=True)
+    engine = get_bridge_engine(Competition.V5RC, low_cpu_usage=True)
     engine.start()
 
     try:
         # Get a fieldset instance
-        fieldset = engine.get_fieldset(Competition.V5RC, "Match Field Set #1")
+        fieldset = engine.get_fieldset("Match Field Set #1")
 
         # Print initial overview
         print("Initial overview:")

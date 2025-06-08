@@ -21,11 +21,11 @@ from vex_tm_bridge import get_bridge_engine
 from vex_tm_bridge.base import Competition
 
 # Create a bridge engine instance
-engine = get_bridge_engine(low_cpu_usage=True)
+engine = get_bridge_engine(Competition.V5RC, low_cpu_usage=True)
 engine.start()
 
 # Get a fieldset instance
-fieldset = engine.get_fieldset(Competition.V5RC, "Match Field Set #1")
+fieldset = engine.get_fieldset("Match Field Set #1")
 
 # Get current overview
 overview = fieldset.get_overview()

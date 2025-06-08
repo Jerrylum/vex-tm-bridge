@@ -906,14 +906,16 @@ class TournamentManagerWebServer(ABC, Generic[M, R]):
 class BridgeEngine(ABC):
     """Abstract base class for the bridge engine that monitors multiple fieldsets."""
 
-    def __init__(self, low_cpu_usage: bool) -> None:
+    def __init__(self, competition: Competition, low_cpu_usage: bool) -> None:
         """Initialize a new bridge engine.
 
         Args:
+            competition: The competition type (V5RC or VIQRC)
             low_cpu_usage: Whether to use low CPU mode. In low CPU mode, the bridge
                 engine will use cached values 90% of the time and only do a full
                 refresh every 10th iteration (every 100ms).
         """
+        self.competition = competition
         self.low_cpu_usage = low_cpu_usage
 
     @abstractmethod
@@ -927,11 +929,10 @@ class BridgeEngine(ABC):
         pass
 
     @abstractmethod
-    def get_fieldset(self, competition: Competition, title: str) -> Fieldset:
+    def get_fieldset(self, title: str) -> Fieldset:
         """Get a fieldset by its window title. Creates one if it doesn't exist.
 
         Args:
-            competition: The competition type
             title: The window title of the fieldset
 
         Returns:

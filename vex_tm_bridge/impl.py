@@ -1084,15 +1084,16 @@ class ImplTournamentManagerWebServer(TournamentManagerWebServer[M, R]):
 class ImplBridgeEngine(BridgeEngine):
     """Implementation of the bridge engine using threads for monitoring."""
 
-    def __init__(self, low_cpu_usage: bool) -> None:
+    def __init__(self, competition: Competition, low_cpu_usage: bool) -> None:
         """Initialize a new bridge engine implementation.
 
         Args:
+            competition: The competition type (V5RC or VIQRC)
             low_cpu_usage: Whether to use low CPU mode. In low CPU mode, the bridge
                 engine will use cached values 90% of the time and only do a full
                 refresh every 10th iteration (every 100ms).
         """
-        super().__init__(low_cpu_usage)
+        super().__init__(competition, low_cpu_usage)
         self._fieldsets: Dict[str, ImplFieldset] = {}
         self._threads: Dict[str, threading.Thread] = {}
         self._stop_events: Dict[str, threading.Event] = {}
@@ -1133,11 +1134,10 @@ class ImplBridgeEngine(BridgeEngine):
             self._threads.clear()
             self._stop_events.clear()
 
-    def get_fieldset(self, competition: Competition, title: str) -> Fieldset:
+    def get_fieldset(self, title: str) -> Fieldset:
         """Get a fieldset by its window title. Creates one if it doesn't exist.
 
         Args:
-            competition: The competition type
             title: The window title of the fieldset
 
         Returns:
@@ -1151,7 +1151,7 @@ class ImplBridgeEngine(BridgeEngine):
             raise Exception("Bridge engine is not running")
         with self._lock:
             if title not in self._fieldsets:
-                fieldset = ImplFieldset(competition, title)
+                fieldset = ImplFieldset(self.competition, title)
                 self._fieldsets[title] = fieldset
                 self._start_monitoring_thread(title)
             return self._fieldsets[title]
@@ -1224,10 +1224,11 @@ class ImplBridgeEngine(BridgeEngine):
                 time.sleep(sleep_time)
 
 
-def get_bridge_engine(low_cpu_usage: bool = True) -> BridgeEngine:
+def get_bridge_engine(competition: Competition, low_cpu_usage: bool = True) -> BridgeEngine:
     """Create a new bridge engine instance.
 
     Args:
+        competition: The competition type (V5RC or VIQRC)
         low_cpu_usage: Whether to use low CPU mode (default: True)
             In low CPU mode, the bridge engine will use cached values 90% of the time
             and only do a full refresh every 10th iteration (every 100ms).
@@ -1236,4 +1237,4 @@ def get_bridge_engine(low_cpu_usage: bool = True) -> BridgeEngine:
     Returns:
         A new bridge engine instance
     """
-    return ImplBridgeEngine(low_cpu_usage)
+    return ImplBridgeEngine(competition, low_cpu_usage)
