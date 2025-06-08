@@ -298,9 +298,9 @@ Development tools:
 The API server accepts the following command-line options:
 
 - `--tm-host-ip` (default: localhost) - Tournament Manager host IP address
-- `--port` (default: 8000) - Port to run the API server on
 - `--competition` (default: V5RC) - Competition type (V5RC or VIQRC)
 - `--host` (default: 0.0.0.0) - Host to bind the server to
+- `--port` (default: 8000) - Port to run the API server on
 
 ### Notes
 
