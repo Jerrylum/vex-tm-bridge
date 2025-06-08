@@ -353,11 +353,120 @@ class FieldsetOverview:
         return self.__hash__() == other.__hash__()
 
 
-class TournamentManager(ABC):
-    """Base class for interacting with Tournament Manager."""
+class Team:
+    """A team in the tournament."""
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, no: str, name: str, location: str, school: str) -> None:
+        self.no = no
+        self.name = name
+        self.location = location
+        self.school = school
+
+    def __str__(self) -> str:
+        return f"Team(no={self.no}, name={self.name}, location={self.location}, school={self.school})"
+
+
+class Match(ABC):
+    """A match in the tournament."""
+
+    def __init__(self, id: str) -> None:
+        self.id = id
+
+
+class MatchV5RC(Match):
+    """A match in the tournament."""
+
+    def __init__(self, id: str, red_team: List[str], blue_team: List[str], red_score: int, blue_score: int) -> None:
+        super().__init__(id)
+        self.red_team = red_team
+        self.blue_team = blue_team
+        self.red_score = red_score
+        self.blue_score = blue_score
+
+    def __str__(self) -> str:
+        return f"Match(id={self.id}, red_team={self.red_team}, blue_team={self.blue_team}, red_score={self.red_score}, blue_score={self.blue_score})"
+
+
+class MatchVIQRC(Match):
+    """A match in the tournament."""
+
+    def __init__(self, id: str, team_1: str, team_2: str, score: float | None) -> None:
+        super().__init__(id)
+        self.team_1 = team_1
+        self.team_2 = team_2
+        self.score = score
+
+
+class Ranking(ABC):
+    """A ranking in the tournament."""
+    def __init__(self, rank: int, team_no: str) -> None:
+        self.rank = rank
+        self.team_no = team_no
+
+
+class RankingV5RC(Ranking):
+    """A ranking in the tournament."""
+
+    def __init__(
+        self,
+        rank: int,
+        team_no: str,
+        average_wps: float,
+        average_aps: float,
+        average_sps: float,
+        wins: int,
+        losses: int,
+        ties: int,
+    ) -> None:
+        super().__init__(rank, team_no)
+        self.average_wps = average_wps
+        self.average_aps = average_aps
+        self.average_sps = average_sps
+        self.wins = wins
+        self.losses = losses
+        self.ties = ties
+
+    def __str__(self) -> str:
+        return f"Ranking(rank={self.rank}, team_no={self.team_no}, average_wps={self.average_wps}, average_aps={self.average_aps}, average_sps={self.average_sps}, wins={self.wins}, losses={self.losses}, ties={self.ties})"
+
+
+class RankingVIQRC(Ranking):
+    """A ranking in the tournament."""
+
+    def __init__(self, rank: int, team_no: str, matches_played: int, average_score: float) -> None:
+        super().__init__(rank, team_no)
+        self.matches_played = matches_played
+        self.average_score = average_score
+
+    def __str__(self) -> str:
+        return f"Ranking(rank={self.rank}, team_no={self.team_no}, matches_played={self.matches_played}, average_score={self.average_score})"
+
+
+class SkillsRanking:
+    """A skills ranking in the tournament."""
+
+    def __init__(
+        self,
+        rank: int,
+        team_no: str,
+        team_name: str,
+        total_score: float,
+        prog_high_score: float,
+        prog_attempts: int,
+        driver_high_score: float,
+        driver_attempts: int,
+    ) -> None:
+        self.rank = rank
+        self.team_no = team_no
+        self.team_name = team_name
+        self.total_score = total_score
+        self.prog_high_score = prog_high_score
+        self.prog_attempts = prog_attempts
+        self.driver_high_score = driver_high_score
+        self.driver_attempts = driver_attempts
+
+    def __str__(self) -> str:
+        return f"SkillsRanking(rank={self.rank}, team_no={self.team_no}, team_name={self.team_name}, total_score={self.total_score}, prog_high_score={self.prog_high_score}, prog_attempts={self.prog_attempts}, driver_high_score={self.driver_high_score}, driver_attempts={self.driver_attempts})"
 
 
 class Fieldset(ABC):
