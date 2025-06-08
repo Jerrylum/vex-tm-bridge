@@ -7,7 +7,7 @@ for representing the state of match fields.
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, TypeVar, Callable, Tuple, Sequence
+from typing import Generic, List, TypeVar, Callable, Tuple, Sequence
 
 Self = TypeVar("Self")
 EventArg = TypeVar("EventArg")
@@ -384,7 +384,7 @@ class MatchV5RC(Match):
         self.blue_score = blue_score
 
     def __str__(self) -> str:
-        return f"Match(id={self.id}, red_team={self.red_team}, blue_team={self.blue_team}, red_score={self.red_score}, blue_score={self.blue_score})"
+        return f"MatchV5RC(id={self.id}, red_team={self.red_team}, blue_team={self.blue_team}, red_score={self.red_score}, blue_score={self.blue_score})"
 
 
 class MatchVIQRC(Match):
@@ -395,6 +395,9 @@ class MatchVIQRC(Match):
         self.team_1 = team_1
         self.team_2 = team_2
         self.score = score
+
+    def __str__(self) -> str:
+        return f"MatchVIQRC(id={self.id}, team_1={self.team_1}, team_2={self.team_2}, score={self.score})"
 
 
 class Ranking(ABC):
@@ -427,7 +430,7 @@ class RankingV5RC(Ranking):
         self.ties = ties
 
     def __str__(self) -> str:
-        return f"Ranking(rank={self.rank}, team_no={self.team_no}, average_wps={self.average_wps}, average_aps={self.average_aps}, average_sps={self.average_sps}, wins={self.wins}, losses={self.losses}, ties={self.ties})"
+        return f"RankingV5RC(rank={self.rank}, team_no={self.team_no}, average_wps={self.average_wps}, average_aps={self.average_aps}, average_sps={self.average_sps}, wins={self.wins}, losses={self.losses}, ties={self.ties})"
 
 
 class RankingVIQRC(Ranking):
@@ -439,7 +442,7 @@ class RankingVIQRC(Ranking):
         self.average_score = average_score
 
     def __str__(self) -> str:
-        return f"Ranking(rank={self.rank}, team_no={self.team_no}, matches_played={self.matches_played}, average_score={self.average_score})"
+        return f"RankingVIQRC(rank={self.rank}, team_no={self.team_no}, matches_played={self.matches_played}, average_score={self.average_score})"
 
 
 class SkillsRanking:
@@ -818,6 +821,86 @@ class FieldsetOverviewUpdatedEvent(Event[Fieldset, FieldsetOverview]):
             caller_self: The fieldset that owns this event.
         """
         super().__init__(caller_self)
+
+
+M = TypeVar('M', bound=Match)
+R = TypeVar('R', bound=Ranking)
+class TournamentManagerWebServer(ABC, Generic[M, R]):
+    """Interface for interacting with the Tournament Manager web server.
+    
+    Type Parameters:
+        Match: The type of match (MatchV5RC or MatchVIQRC)
+        Ranking: The type of ranking (RankingV5RC or RankingVIQRC)
+    """
+
+    def __init__(self, tm_host_ip: str, competition: Competition) -> None:
+        """Initialize a new web server interface.
+
+        Args:
+            tm_host_ip: The IP address of the Tournament Manager web server
+            competition: The type of competition (V5RC or VIQRC)
+        """
+        self.tm_host_ip = tm_host_ip
+        self.competition = competition
+
+    @abstractmethod
+    def get_teams(self, division_no: int) -> List[Team]:
+        """Get the list of teams in a division.
+
+        Args:
+            division_no: The division number to get teams from
+
+        Returns:
+            A list of teams in the division
+
+        Raises:
+            Exception: If there is an error fetching the teams
+        """
+        ...
+
+    @abstractmethod
+    def get_matches(self, division_no: int) -> List[M]:
+        """Get the list of matches in a division.
+
+        Args:
+            division_no: The division number to get matches from
+
+        Returns:
+            A list of matches in the division. For V5RC competitions, returns List[MatchV5RC].
+            For VIQRC competitions, returns List[MatchVIQRC].
+
+        Raises:
+            Exception: If there is an error fetching the matches
+        """
+        ...
+
+    @abstractmethod
+    def get_rankings(self, division_no: int) -> List[R]:
+        """Get the rankings in a division.
+
+        Args:
+            division_no: The division number to get rankings from
+
+        Returns:
+            A list of rankings in the division. For V5RC competitions, returns List[RankingV5RC].
+            For VIQRC competitions, returns List[RankingVIQRC].
+
+        Raises:
+            Exception: If there is an error fetching the rankings
+        """
+        ...
+
+    @abstractmethod
+    def get_skills_rankings(self) -> List[SkillsRanking]:
+        """Get the skills rankings.
+
+        Returns:
+            A list of skills rankings
+
+        Raises:
+            Exception: If there is an error fetching the skills rankings
+        """
+        ...
 
 
 class BridgeEngine(ABC):

@@ -9,7 +9,9 @@ description = "An unofficial Python bridge for interacting with VEX Tournament M
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "beautifulsoup4>=4.13.4",
     "pywinauto>=0.6.9",
+    "requests>=2.32.3",
 ]
 
 [project.optional-dependencies]

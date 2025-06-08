@@ -7,7 +7,10 @@ and control match fields through the Tournament Manager UI.
 
 import threading
 import time
-from typing import Dict, Union, Optional, cast
+from typing import Dict, List, Union, Optional, overload
+
+import requests
+from bs4 import BeautifulSoup
 from .base import (
     BridgeEngine,
     Fieldset,
@@ -18,6 +21,15 @@ from .base import (
     Competition,
     FieldsetQueueSkills,
     FieldsetAutonomousBonus,
+    MatchV5RC,
+    MatchVIQRC,
+    RankingV5RC,
+    RankingVIQRC,
+    SkillsRanking,
+    Team,
+    TournamentManagerWebServer,
+    M,
+    R,
 )
 from pywinauto.application import WindowSpecification
 from pywinauto import Application, findwindows
@@ -886,6 +898,187 @@ class ImplFieldset(Fieldset):
     @require_window
     def get_active_match(self) -> FieldsetActiveMatch:
         return impl_get_active_match_type(self._match_on_field_control)
+
+
+class ImplTournamentManagerWebServer(TournamentManagerWebServer[M, R]):
+    """Implementation of the Tournament Manager web server interface.
+    
+    This implementation is used to interact with the Tournament Manager web server.
+    BeautifulSoup is used to parse the HTML responses from the Tournament Manager web server.
+    It is used to get the list of teams, matches, rankings, and skills rankings.
+
+    Type Parameters:
+        M: The type of match (MatchV5RC or MatchVIQRC)
+        R: The type of ranking (RankingV5RC or RankingVIQRC)
+    """
+
+    @overload
+    def __init__(self, tm_host_ip: str, competition: Competition.V5RC) -> None: ...
+
+    @overload
+    def __init__(self, tm_host_ip: str, competition: Competition.VIQRC) -> None: ...
+
+    def __init__(self, tm_host_ip: str, competition: Competition) -> None:
+        """Initialize a new web server implementation.
+
+        Args:
+            tm_host_ip: The IP address of the Tournament Manager web server
+            competition: The type of competition (V5RC or VIQRC)
+        """
+        super().__init__(tm_host_ip, competition)
+
+    def get_teams(self, division_no: int) -> List[Team]:
+        """Get the list of teams in a division.
+
+        Args:
+            division_no: The division number to get teams from
+
+        Returns:
+            A list of teams in the division
+
+        Raises:
+            Exception: If there is an error fetching the teams
+        """
+        url = f"http://{self.tm_host_ip}/division{division_no}/teams"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()  # Raise an exception for bad status codes
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            teams = []
+            # Find the table containing team data
+            table = soup.find("table", {"class": "table"})
+            if table:
+                # Skip header row
+                for row in table.find_all("tr")[1:]:
+                    cols = row.find_all("td")
+                    if len(cols) == 4:  # Ensure we have all columns
+                        team = Team(
+                            no=cols[0].text.strip(),
+                            name=cols[1].text.strip(),
+                            location=cols[2].text.strip(),
+                            school=cols[3].text.strip(),
+                        )
+                        teams.append(team)
+            return teams
+        except Exception as e:
+            raise Exception(f"Error fetching teams: {e}")
+
+    def get_matches(self, division_no: int) -> List[M]:
+        """Get the list of matches in a division.
+
+        Args:
+            division_no: The division number to get matches from
+
+        Returns:
+            A list of matches in the division. For V5RC competitions, returns List[MatchV5RC].
+            For VIQRC competitions, returns List[MatchVIQRC].
+
+        Raises:
+            Exception: If there is an error fetching the matches
+        """
+        url = f"http://{self.tm_host_ip}/division{division_no}/matches"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            matches: List[M] = []
+            table = soup.find("table", {"class": "table-centered"})
+            if table:
+                for row in table.find_all("tr")[1:]:  # Skip header row
+                    cols = row.find_all("td")
+                    if len(cols) >= 3:  # Ensure we have minimum required columns
+                        match_id = cols[0].text.strip()
+                        if self.competition == Competition.V5RC:
+                            pass # TODO
+                        else:
+                            # For VIQRC: Parse team 1, team 2, and score
+                            team_1 = cols[1].text.strip()
+                            team_2 = cols[2].text.strip()
+                            score_text = cols[-1].text.strip()
+                            score = float(score_text) if score_text else None
+                            match = MatchVIQRC(match_id, team_1, team_2, score)
+                            matches.append(match)  # type: ignore
+            return matches
+        except Exception as e:
+            raise Exception(f"Error fetching matches: {e}")
+
+    def get_rankings(self, division_no: int) -> List[R]:
+        """Get the rankings in a division.
+
+        Args:
+            division_no: The division number to get rankings from
+
+        Returns:
+            A list of rankings in the division. For V5RC competitions, returns List[RankingV5RC].
+            For VIQRC competitions, returns List[RankingVIQRC].
+
+        Raises:
+            Exception: If there is an error fetching the rankings
+        """
+        url = f"http://{self.tm_host_ip}/division{division_no}/rankings"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            rankings: List[R] = []
+            table = soup.find("table", {"class": "table"})
+            if table:
+                for row in table.find_all("tr")[1:]:  # Skip header row
+                    cols = row.find_all("td")
+                    if len(cols) >= 3:  # Ensure we have minimum required columns
+                        rank = int(cols[0].text.strip())
+                        team_no = cols[1].text.strip()
+
+                        if self.competition == Competition.V5RC:
+                            pass # TODO
+                        else:
+                            # For VIQRC: Parse matches played and average score
+                            matches_played = int(cols[3].text.strip())
+                            avg_score = float(cols[4].text.strip())
+                            ranking = RankingVIQRC(rank, team_no, matches_played, avg_score)
+                            rankings.append(ranking)  # type: ignore
+            return rankings
+        except Exception as e:
+            raise Exception(f"Error fetching rankings: {e}")
+
+    def get_skills_rankings(self) -> List[SkillsRanking]:
+        """Get the skills rankings.
+
+        Returns:
+            A list of skills rankings
+
+        Raises:
+            Exception: If there is an error fetching the skills rankings
+        """
+        url = f"http://{self.tm_host_ip}/skills/rankings"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            rankings = []
+            table = soup.find("table", {"class": "table-centered"})
+            if table:
+                for row in table.find_all("tr")[1:]:  # Skip header row
+                    cols = row.find_all("td")
+                    if len(cols) == 8:  # Ensure we have all columns
+                        ranking = SkillsRanking(
+                            rank=int(cols[0].text.strip()),
+                            team_no=cols[1].text.strip(),
+                            team_name=cols[2].text.strip(),
+                            total_score=float(cols[3].text.strip()),
+                            prog_high_score=float(cols[4].text.strip()),
+                            prog_attempts=int(cols[5].text.strip()),
+                            driver_high_score=float(cols[6].text.strip()),
+                            driver_attempts=int(cols[7].text.strip()),
+                        )
+                        rankings.append(ranking)
+            return rankings
+        except Exception as e:
+            raise Exception(f"Error fetching skills rankings: {e}")
 
 
 class ImplBridgeEngine(BridgeEngine):
