@@ -8,7 +8,7 @@ and control match fields through the Tournament Manager UI.
 from abc import ABC
 import threading
 import time
-from typing import Dict, List, Union, Optional, overload, Literal
+from typing import Callable, Dict, List, Union, Optional, overload, Literal
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -43,8 +43,9 @@ ControlWrapper = Union[ButtonWrapper, ComboBoxWrapper, HwndWrapper]
 
 
 def impl_start_match(
-    start_match_button: ButtonWrapper,
-    resume_match_button: ButtonWrapper,
+    start_match_button: Callable[[], ButtonWrapper],
+    resume_match_button: Callable[[], ButtonWrapper],
+    reset_timer_button: Callable[[], ButtonWrapper],
     match_state_control: HwndWrapper,
 ) -> None:
     """Start or resume a match.
@@ -52,9 +53,15 @@ def impl_start_match(
     This function handles both starting a new match and resuming a paused match.
     It checks the current match state to determine the appropriate action.
 
+    Since the start and resume buttons never appear in the UI at the same time,
+    it is not possible to get both buttons at the same time.
+
+    We take functions instead of direct controls. After we determine which button
+    to use, we call the function to get the button control.
+
     Args:
-        start_match_button: The "Start Match" button control
-        resume_match_button: The "Resume Match" button control
+        start_match_button: A function that returns the "Start Match" button control
+        resume_match_button: A function that returns the "Resume Match" button control
         match_state_control: The match state display control
 
     Raises:
@@ -63,16 +70,15 @@ def impl_start_match(
     try:
         current_field_state = impl_get_match_state(match_state_control)
         if current_field_state == FieldsetState.Pause:
-            resume_match_button.click()
-        elif current_field_state == FieldsetState.Disabled and resume_match_button.is_enabled():
+            resume_match_button().click()
+        elif current_field_state == FieldsetState.Disabled:
             # XXX: The tournament manager might not be able to start the match if some edge cases.
             # Use reset timer to ensure the match is in a valid state.
-            start_match_button.click()
+            reset_timer_button().click()
+            start_match_button().click()
         else:
-            # IMPORTANT: Do not click the button if the match is already started or ended.
-            raise ValueError(
-                f"Unable to start match. The match might be started already or ended (need to click Reset Timer)."
-            )
+            # IMPORTANT: Do not click the button otherwise
+            raise ValueError(f"Unable to start match. The match might be started already.")
     except Exception as e:
         raise ValueError(f"Error starting match: {e}")
 
@@ -94,36 +100,50 @@ def impl_end_early(end_early_button: ButtonWrapper) -> None:
         raise ValueError(f"Error ending early: {e}")
 
 
-def impl_abort_match(abort_match_button: ButtonWrapper) -> None:
+def impl_abort_match(abort_match_button: Callable[[], ButtonWrapper], match_state_control: HwndWrapper) -> None:
     """Abort the current match.
 
+    The abort match button is only available when the match is NOT ended.
+    So we need to check the match state before searching for the button.
+
     Args:
-        abort_match_button: The "Abort Match" button control
+        abort_match_button: A function that returns the "Abort Match" button control
+        match_state_control: The match state display control
 
     Raises:
         ValueError: If the match cannot be aborted in its current state
     """
     try:
-        abort_match_button.click()
-    except pywinauto.base_wrapper.ElementNotEnabled:
-        raise ValueError(f"Unable to abort match. The match might be paused.")
+        match_state = impl_get_match_state(match_state_control)
+        if (
+            match_state == FieldsetState.Autonomous
+            or match_state == FieldsetState.DriverControl
+            or match_state == FieldsetState.Prestart
+        ):
+            abort_match_button().click()
+        else:
+            raise ValueError(f"Unable to abort match. The match is not in a valid state.")
     except Exception as e:
         raise ValueError(f"Error aborting match: {e}")
 
 
-def impl_reset_timer(reset_timer_button: ButtonWrapper) -> None:
+def impl_reset_timer(reset_timer_button: Callable[[], ButtonWrapper], match_state_control: HwndWrapper) -> None:
     """Reset the match timer.
 
+    The reset timer button is only available when the match is ended.
+    So we need to check the match state before searching for the button.
+
     Args:
-        reset_timer_button: The "Reset Timer" button control
+        reset_timer_button: A function that returns the "Reset Timer" button control
+        match_state_control: The match state display control
 
     Raises:
         ValueError: If the timer cannot be reset in its current state
     """
     try:
-        reset_timer_button.click()
-    except pywinauto.base_wrapper.ElementNotEnabled:
-        raise ValueError(f"Unable to reset timer. The match is not ended.")
+        if impl_get_match_state(match_state_control) != FieldsetState.Disabled:
+            raise ValueError(f"Unable to reset timer. The match is not ended.")
+        reset_timer_button().click()
     except Exception as e:
         raise ValueError(f"Error resetting timer: {e}")
 
@@ -1004,11 +1024,11 @@ class ImplFieldset(Fieldset):
         if self.window is None:
             return
 
-        self._start_match_button = self.window["Start Match"].wrapper_object()
-        self._resume_match_button = self.window["Resume Match"].wrapper_object()
+        self.__start_match_button = None
+        self.__resume_match_button = None
         self._end_early_button = self.window["End Early"].wrapper_object()
-        self._abort_match_button = self.window["Abort Match"].wrapper_object()
-        self._reset_timer_button = self.window["Reset Timer"].wrapper_object()
+        self.__abort_match_button = None
+        self.__reset_timer_button = None
         self._audience_display_buttons = {
             display: self.window[display.ui_name].wrapper_object()
             for display in FieldsetAudienceDisplay
@@ -1028,6 +1048,38 @@ class ImplFieldset(Fieldset):
         self._show_results_automatically_checkbox = self.window["Show Results Automatically"].wrapper_object()
 
         self._last_overview: Optional[FieldsetOverview] = None
+
+    @property
+    def _start_match_button(self) -> ButtonWrapper:
+        if self.window is None:
+            raise WindowNotFoundError(self.fieldset_title)
+        if self.__start_match_button is None:
+            self.__start_match_button = self.window["Start Match"].wrapper_object()
+        return self.__start_match_button
+
+    @property
+    def _resume_match_button(self) -> ButtonWrapper:
+        if self.window is None:
+            raise WindowNotFoundError(self.fieldset_title)
+        if self.__resume_match_button is None:
+            self.__resume_match_button = self.window["Resume Match"].wrapper_object()
+        return self.__resume_match_button
+
+    @property
+    def _abort_match_button(self) -> ButtonWrapper:
+        if self.window is None:
+            raise WindowNotFoundError(self.fieldset_title)
+        if self.__abort_match_button is None:
+            self.__abort_match_button = self.window["Abort Match"].wrapper_object()
+        return self.__abort_match_button
+
+    @property
+    def _reset_timer_button(self) -> ButtonWrapper:
+        if self.window is None:
+            raise WindowNotFoundError(self.fieldset_title)
+        if self.__reset_timer_button is None:
+            self.__reset_timer_button = self.window["Reset Timer"].wrapper_object()
+        return self.__reset_timer_button
 
     def is_connected(self) -> bool:
         """Check if this fieldset is connected to Tournament Manager.
@@ -1075,8 +1127,9 @@ class ImplFieldset(Fieldset):
     @require_window
     def start_match(self) -> None:
         impl_start_match(
-            self._start_match_button,
-            self._resume_match_button,
+            lambda: self._start_match_button,
+            lambda: self._resume_match_button,
+            lambda: self._reset_timer_button,
             self._match_state_control,
         )
 
@@ -1086,11 +1139,11 @@ class ImplFieldset(Fieldset):
 
     @require_window
     def abort_match(self) -> None:
-        impl_abort_match(self._abort_match_button)
+        impl_abort_match(lambda: self._abort_match_button, self._match_state_control)
 
     @require_window
     def reset_timer(self) -> None:
-        impl_reset_timer(self._reset_timer_button)
+        impl_reset_timer(lambda: self._reset_timer_button, self._match_state_control)
 
     @require_window
     def set_audience_display(self, display: FieldsetAudienceDisplay) -> None:
