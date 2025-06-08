@@ -62,6 +62,7 @@ def impl_start_match(
     Args:
         start_match_button: A function that returns the "Start Match" button control
         resume_match_button: A function that returns the "Resume Match" button control
+        reset_timer_button: A function that returns the "Reset Timer" button control
         match_state_control: The match state display control
 
     Raises:
