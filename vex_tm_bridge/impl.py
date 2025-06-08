@@ -699,7 +699,7 @@ def impl_get_team_list(tm_host_ip: str, division_no: int) -> List[Team]:
         if table and isinstance(table, Tag):
             # Skip header row
             for row in table.find_all("tr")[1:]:
-                cols = row.find_all("td")
+                cols = row.find_all("td")  # type: ignore
                 if len(cols) == 4:  # Ensure we have all columns
                     team = Team(
                         no=cols[0].text.strip(),
@@ -736,7 +736,7 @@ def impl_get_match_list_V5RC(tm_host_ip: str, division_no: int) -> List[MatchV5R
         table = soup.find("table", {"class": "table-centered"})
         if table and isinstance(table, Tag):
             for row in table.find_all("tr")[1:]:  # Skip header row
-                cols = row.find_all("td")
+                cols = row.find_all("td")  # type: ignore
                 if len(cols) >= 3:  # Ensure we have minimum required columns
                     match_id = cols[0].text.strip()
 
@@ -745,8 +745,8 @@ def impl_get_match_list_V5RC(tm_host_ip: str, division_no: int) -> List[MatchV5R
                     blue_team = []
 
                     # Find all red team cells and blue team cells
-                    red_team_cells = row.find_all("td", class_="redteam")[:-1]
-                    blue_team_cells = row.find_all("td", class_="blueteam")[:-1]
+                    red_team_cells = row.find_all("td", class_="redteam")[:-1]  # type: ignore
+                    blue_team_cells = row.find_all("td", class_="blueteam")[:-1]  # type: ignore
 
                     # Extract team numbers from red team cells
                     for cell in red_team_cells:
@@ -801,7 +801,7 @@ def impl_get_match_list_VIQRC(tm_host_ip: str, division_no: int) -> List[MatchVI
         table = soup.find("table", {"class": "table-centered"})
         if table and isinstance(table, Tag):
             for row in table.find_all("tr")[1:]:  # Skip header row
-                cols = row.find_all("td")
+                cols = row.find_all("td")  # type: ignore
                 if len(cols) >= 3:  # Ensure we have minimum required columns
                     match_id = cols[0].text.strip()
                     team_1 = cols[1].text.strip()
@@ -838,7 +838,7 @@ def impl_get_ranking_list_V5RC(tm_host_ip: str, division_no: int) -> List[Rankin
         table = soup.find("table", {"class": "table"})
         if table and isinstance(table, Tag):
             for row in table.find_all("tr")[1:]:  # Skip header row
-                cols = row.find_all("td")
+                cols = row.find_all("td")  # type: ignore
                 if len(cols) >= 7:  # Ensure we have all required columns
                     rank = int(cols[0].text.strip())
                     team_no = cols[1].text.strip()
@@ -888,7 +888,7 @@ def impl_get_ranking_list_VIQRC(tm_host_ip: str, division_no: int) -> List[Ranki
         table = soup.find("table", {"class": "table"})
         if table and isinstance(table, Tag):
             for row in table.find_all("tr")[1:]:  # Skip header row
-                cols = row.find_all("td")
+                cols = row.find_all("td")  # type: ignore
                 if len(cols) >= 3:  # Ensure we have minimum required columns
                     rank = int(cols[0].text.strip())
                     team_no = cols[1].text.strip()
@@ -924,7 +924,7 @@ def impl_get_skills_ranking_list(tm_host_ip: str) -> List[SkillsRanking]:
         table = soup.find("table", {"class": "table-centered"})
         if table and isinstance(table, Tag):
             for row in table.find_all("tr")[1:]:  # Skip header row
-                cols = row.find_all("td")
+                cols = row.find_all("td")  # type: ignore
                 if len(cols) == 8:  # Ensure we have all columns
                     ranking = SkillsRanking(
                         rank=int(cols[0].text.strip()),
