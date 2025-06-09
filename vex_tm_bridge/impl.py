@@ -120,6 +120,7 @@ def impl_abort_match(abort_match_button: Callable[[], ButtonWrapper], match_stat
             match_state == FieldsetState.Autonomous
             or match_state == FieldsetState.DriverControl
             or match_state == FieldsetState.Prestart
+            or match_state == FieldsetState.Timeout
         ):
             abort_match_button().click()
         else:
@@ -405,15 +406,19 @@ def impl_get_saved_match_results(
 
 
 def impl_set_autonomous_bonus(
-    bonus_button: Dict[FieldsetAutonomousBonus, ButtonWrapper],
+    bonus_buttons: Callable[[], Dict[FieldsetAutonomousBonus, ButtonWrapper]],
     bonus: FieldsetAutonomousBonus,
     competition: Competition,
     active_match_control: HwndWrapper,
 ) -> None:
     """Set the autonomous bonus.
 
+    This function is lazy because it only gets the bonus buttons when it is
+    called.The autonomous bonus buttons are not always available, so we need
+    to check if they are available before using them.
+
     Args:
-        bonus_button: Dictionary mapping bonus states to their button controls
+        bonus_buttons: A function that returns a dictionary mapping bonus states to their button controls
         bonus: The bonus state to set
         competition: The current competition type
         active_match_control: The active match display control
@@ -425,18 +430,22 @@ def impl_set_autonomous_bonus(
         raise ValueError(f"Autonomous bonus is not available for {competition}")
     if impl_get_active_match_type(active_match_control) == FieldsetActiveMatch.Timeout:
         raise ValueError("Autonomous bonus is not available for timeout")
-    bonus_button[bonus].click()
+    bonus_buttons()[bonus].click()
 
 
 def impl_get_autonomous_bonus(
-    bonus_buttons: Dict[FieldsetAutonomousBonus, ButtonWrapper],
+    bonus_buttons: Callable[[], Dict[FieldsetAutonomousBonus, ButtonWrapper]],
     competition: Competition,
     active_match_control: HwndWrapper,
 ) -> FieldsetAutonomousBonus:
     """Get the current autonomous bonus state.
 
+    This function is lazy because it only gets the bonus buttons when it is
+    called.The autonomous bonus buttons are not always available, so we need
+    to check if they are available before using them.
+
     Args:
-        bonus_buttons: Dictionary mapping bonus states to their button controls
+        bonus_buttons: A function that returns a dictionary mapping bonus states to their button controls
         competition: The current competition type
         active_match_control: The active match display control
 
@@ -444,43 +453,17 @@ def impl_get_autonomous_bonus(
         The current bonus state
 
     Raises:
-        ValueError: If autonomous bonus is not available in the current state
+        ValueError: If the bonus state is not available
     """
     if competition != Competition.V5RC:
-        raise ValueError(f"Autonomous bonus is not available for {competition}")
+        return FieldsetAutonomousBonus.NoBonus
     if impl_get_active_match_type(active_match_control) == FieldsetActiveMatch.Timeout:
-        raise ValueError("Autonomous bonus is not available for timeout")
+        return FieldsetAutonomousBonus.NoBonus
 
-    for bonus, button in bonus_buttons.items():
+    for bonus, button in bonus_buttons().items():
         if button.get_check_state():
             return bonus
     raise ValueError("No bonus found")
-
-
-def impl_get_autonomous_bonus_lazy(
-    bonus_buttons: Dict[FieldsetAutonomousBonus, ButtonWrapper],
-    competition: Competition,
-    active_match_control: HwndWrapper,
-    last_bonus: FieldsetAutonomousBonus,
-) -> FieldsetAutonomousBonus:
-    """Get the current autonomous bonus state, using a cached value if possible.
-
-    This is an optimization that checks if the last known bonus state is still
-    active before doing a full scan of all bonus buttons.
-
-    Args:
-        bonus_buttons: Dictionary mapping bonus states to their button controls
-        competition: The current competition type
-        active_match_control: The active match display control
-        last_bonus: The last known bonus state
-
-    Returns:
-        The current bonus state
-    """
-    if bonus_buttons[last_bonus].get_check_state():
-        return last_bonus
-    else:
-        return impl_get_autonomous_bonus(bonus_buttons, competition, active_match_control)
 
 
 def impl_set_play_sounds(play_sounds_checkbox: ButtonWrapper, play_sounds: bool) -> None:
@@ -594,7 +577,7 @@ def impl_get_fieldset_overview(
     field_select: ComboBoxWrapper,
     match_on_field_control: HwndWrapper,
     saved_match_results_control: HwndWrapper,
-    autonomous_bonus_buttons: Dict[FieldsetAutonomousBonus, ButtonWrapper],
+    autonomous_bonus_buttons: Callable[[], Dict[FieldsetAutonomousBonus, ButtonWrapper]],
     play_sounds_checkbox: ButtonWrapper,
     show_results_automatically_checkbox: ButtonWrapper,
     competition: Competition,
@@ -943,7 +926,7 @@ class WindowNotFoundError(Exception):
         Args:
             fieldset_title: The title of the window that could not be found
         """
-        self.message = f"TM Bridge cannot connect to a Match Field Set dialog titled '{fieldset_title}'. Please ensure that the Match Field Set dialog is open and visible (at least once)."
+        self.message = f"TM Bridge cannot connect to a Match Field Set dialog titled '{fieldset_title}'. Please ensure that the Match Field Set dialog is open and visible (at least once), and the competition type is correct."
 
     def __str__(self) -> str:
         return self.message
@@ -1031,11 +1014,7 @@ class ImplFieldset(Fieldset):
         self._field_select = self.window.ComboBox.wrapper_object()
         self._match_on_field_control = self.window["Static"].wrapper_object()
         self._saved_match_results_control = self.window["Static2"].wrapper_object()
-        self._autonomous_bonus_buttons = {
-            bonus: self.window[bonus.ui_name].wrapper_object()
-            for bonus in FieldsetAutonomousBonus
-            if self.competition == Competition.V5RC
-        }
+        self.__autonomous_bonus_buttons = None
         self._play_sounds_checkbox = self.window["Play Sounds"].wrapper_object()
         self._show_results_automatically_checkbox = self.window["Show Results Automatically"].wrapper_object()
 
@@ -1073,6 +1052,16 @@ class ImplFieldset(Fieldset):
             self.__reset_timer_button = self.window["Reset Timer"].wrapper_object()
         return self.__reset_timer_button
 
+    @property
+    def _autonomous_bonus_buttons(self) -> Dict[FieldsetAutonomousBonus, ButtonWrapper]:
+        if self.window is None:
+            raise WindowNotFoundError(self.fieldset_title)
+        if self.__autonomous_bonus_buttons is None:
+            self.__autonomous_bonus_buttons = {
+                bonus: self.window[bonus.ui_name].wrapper_object() for bonus in FieldsetAutonomousBonus
+            }
+        return self.__autonomous_bonus_buttons
+
     def is_connected(self) -> bool:
         """Check if this fieldset is connected to Tournament Manager.
 
@@ -1105,7 +1094,7 @@ class ImplFieldset(Fieldset):
             self._field_select,
             self._match_on_field_control,
             self._saved_match_results_control,
-            self._autonomous_bonus_buttons,
+            lambda: self._autonomous_bonus_buttons,
             self._play_sounds_checkbox,
             self._show_results_automatically_checkbox,
             self.competition,
@@ -1180,7 +1169,7 @@ class ImplFieldset(Fieldset):
     @require_window
     def set_autonomous_bonus(self, bonus: FieldsetAutonomousBonus) -> None:
         impl_set_autonomous_bonus(
-            self._autonomous_bonus_buttons,
+            lambda: self._autonomous_bonus_buttons,
             bonus,
             self.competition,
             self._match_on_field_control,
@@ -1189,7 +1178,7 @@ class ImplFieldset(Fieldset):
     @require_window
     def get_autonomous_bonus(self) -> FieldsetAutonomousBonus:
         return impl_get_autonomous_bonus(
-            self._autonomous_bonus_buttons,
+            lambda: self._autonomous_bonus_buttons,
             self.competition,
             self._match_on_field_control,
         )
@@ -1375,10 +1364,12 @@ class ImplBridgeEngine(BridgeEngine, ABC):
                 # Determine if we should use cache based on CPU mode and iteration
                 should_use_cache = self.low_cpu_usage and iteration % CACHE_CYCLE != 0
                 fieldset.get_overview(cache=should_use_cache)
-            except Exception:
+            except Exception as e:
                 # Window was closed or lost
                 fieldset.set_window(None)
-                print(f"Fieldset {title} lost connection")
+                print(
+                    f"Fieldset {title} lost connection. This might be because the fieldset was closed or an error occurred: {e}"
+                )
                 # Try to recover by reconnecting
                 try:
                     fieldset.reobtain_window()

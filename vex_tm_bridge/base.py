@@ -187,6 +187,7 @@ class FieldsetState(Enum):
     )  # although you can only see the word "DRIVER" in the UI
     Pause = ("PAUSED", "PAUSED")
     Disabled = ("DISABLED", "")
+    Timeout = ("TIMEOUT", "TIMEOUT")
 
     def __str__(self) -> str:
         return self.value[0]

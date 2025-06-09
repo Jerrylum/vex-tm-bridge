@@ -5,7 +5,7 @@ This file is for development purposes only and won't be included in the package.
 
 import time
 from vex_tm_bridge import get_bridge_engine
-from vex_tm_bridge.base import Competition, Fieldset, FieldsetOverview
+from vex_tm_bridge.base import Competition, Fieldset, FieldsetAudienceDisplay, FieldsetOverview
 
 
 def test_basic_monitoring():
@@ -83,21 +83,20 @@ def test_viqrc_web_server():
 
 
 def main():
-    test_v5rc_web_server()
+    # test_v5rc_web_server()
     # test_viqrc_web_server()
-    # try:
-    #     engine, fieldset = test_basic_monitoring()
+    try:
+        engine, fieldset = test_basic_monitoring()
 
-    #     # # Uncomment to test match control
-    #     # # test_match_control(fieldset)
+        # Uncomment to test match control
+        # test_match_control(fieldset)
 
-    #     print("Monitoring for updates (Ctrl+C to stop)...")
-    #     while True:
-    #         time.sleep(1)
+        print("Monitoring for updates (Ctrl+C to stop)...")
+        while True:
+            time.sleep(1)
 
-    # except KeyboardInterrupt:
-    #     print("\nStopping...")
-    #     engine.stop()
+    except KeyboardInterrupt:
+        print("\nStopping...")
 
 
 if __name__ == "__main__":
