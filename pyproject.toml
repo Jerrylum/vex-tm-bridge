@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vex-tm-bridge"
-version = "0.1.0"
+version = "0.1.1"
 description = "An unofficial Python bridge for interacting with VEX Tournament Manager software."
 readme = "README.md"
 authors = [
