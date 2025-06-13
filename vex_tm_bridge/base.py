@@ -86,16 +86,24 @@ class Event(ABC, Generic[Self, EventArg]):
 class Competition(Enum):
     """The type of VEX competition being run."""
 
-    V5RC = ("VEX V5 Robotics Competition",)
-    VIQRC = "VEX IQ Robotics Competition"
+    V5RC = ("V5RC", "VEX V5 Robotics Competition")
+    VIQRC = ("VIQRC", "VEX IQ Robotics Competition")
 
     def __str__(self) -> str:
-        return self.value[0]
+        return self.value[1]
 
     @property
     def name(self) -> str:
-        """The full name of the competition."""
+        """The shortname of the competition."""
         return self.value[0]
+    
+    @staticmethod
+    def by_name(name: str) -> "Competition":
+        """Get a competition by its name."""
+        for competition in Competition:
+            if competition.name == name:
+                return competition
+        raise ValueError(f"No competition found for name: {name}")
 
 
 class FieldsetAudienceDisplay(Enum):
