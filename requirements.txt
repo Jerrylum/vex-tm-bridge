@@ -36,7 +36,7 @@ pywin32==310
     # via pywinauto
 pywinauto==0.6.9
     # via vex-tm-bridge (pyproject.toml)
-requests==2.32.3
+requests==2.32.4
     # via vex-tm-bridge (pyproject.toml)
 six==1.17.0
     # via pywinauto
