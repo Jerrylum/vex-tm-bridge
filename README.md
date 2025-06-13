@@ -70,13 +70,13 @@ Do not use this package to recreate TM Mobile or create alternative scoring appl
 Using uv (recommended):
 
 ```bash
-uv add vex-tm-bridge
+uv add "vex-tm-bridge @ git+https://github.com/Jerrylum/vex-tm-bridge.git"
 ```
 
 Using pip:
 
 ```bash
-pip install vex-tm-bridge
+pip install "vex-tm-bridge @ git+https://github.com/Jerrylum/vex-tm-bridge.git"
 ```
 
 ## Quick Start
