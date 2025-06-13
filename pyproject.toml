@@ -7,6 +7,9 @@ name = "vex-tm-bridge"
 version = "0.1.0"
 description = "An unofficial Python bridge for interacting with VEX Tournament Manager software."
 readme = "README.md"
+authors = [
+    { name = "Jerry Lum", email = "me@jerryio.com" }
+]
 requires-python = ">=3.11"
 dependencies = [
     "beautifulsoup4>=4.13.4",
