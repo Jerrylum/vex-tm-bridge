@@ -3,9 +3,7 @@
 An unofficial Python bridge for interacting with VEX Tournament Manager software. This package provides a high-level API to control and monitor VEX Tournament Manager through its UI using pywinauto and web scraping.
 
 > [!CAUTION]
-> **This package is very likely to be considered as unauthorized software.** As an Event Partner, using this package might be treated as a violation of the Commitment to Event Excellence. This package accesses Tournament Manager through UI automation (pywinauto) and web scraping, which might be considered as accessing internal components of Tournament Manager outside of the official open API protocols.
->
-> **Read the official [TM Public API guidelines](https://kb.roboticseducation.org/hc/en-us/articles/19238156122135) and [Commitment to Event Excellence](https://kb.roboticseducation.org/hc/en-us/articles/12094736701975-Commitment-to-Event-Excellence) before using this package in any official event.**
+> This package accesses Tournament Manager through UI automation (pywinauto) and web scraping, which might be considered as accessing internal components of Tournament Manager outside of the official open API protocols. Please consult your Program Support Manager before the use of this package at an Event.
 
 ## Why Use This Package?
 
